@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sensors_plus/sensors_plus.dart';
+import 'dart:async';
 
 class GyroscopeScreen extends StatefulWidget {
   const GyroscopeScreen({super.key});
@@ -12,19 +13,45 @@ class _GyroscopeScreenState extends State<GyroscopeScreen> {
   List<double> _gyroscopeValues = [0, 0, 0];
   double _rotationX = 0;
   double _rotationY = 0;
+  StreamSubscription<GyroscopeEvent>? _subscription;
+  String _status = 'Initializing...';
 
   @override
   void initState() {
     super.initState();
+    _startListening();
+  }
 
-    gyroscopeEventStream().listen((GyroscopeEvent event) {
-      if (!mounted) return;
+  void _startListening() {
+    try {
+      _subscription = gyroscopeEventStream().listen(
+        (GyroscopeEvent event) {
+          if (!mounted) return;
+          setState(() {
+            _gyroscopeValues = [event.x, event.y, event.z];
+            _rotationX += event.x * 0.05;
+            _rotationY += event.y * 0.05;
+            _status = 'Active';
+          });
+        },
+        onError: (e) {
+          setState(() {
+            _status = 'Error: $e';
+          });
+        },
+        cancelOnError: true,
+      );
+    } catch (e) {
       setState(() {
-        _gyroscopeValues = [event.x, event.y, event.z];
-        _rotationX += event.x * 0.05;
-        _rotationY += event.y * 0.05;
+        _status = 'Sensor not supported: $e';
       });
-    });
+    }
+  }
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
   }
 
   void _resetRotation() {
@@ -52,42 +79,65 @@ class _GyroscopeScreenState extends State<GyroscopeScreen> {
                 height: 250,
                 width: double.infinity,
                 color: Colors.teal.shade50,
-                child: Center(
-                  child: Transform(
-                    alignment: Alignment.center,
-                    transform: Matrix4.identity()
-                      ..setEntry(3, 2, 0.001)
-                      ..rotateX(_rotationX)
-                      ..rotateY(_rotationY),
-                    child: Container(
-                      width: 120,
-                      height: 120,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [Colors.teal, Colors.blue],
-                        ),
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black26,
-                            blurRadius: 10,
-                            offset: const Offset(5, 5),
+                child: Stack(
+                  children: [
+                    Center(
+                      child: Transform(
+                        alignment: Alignment.center,
+                        transform: Matrix4.identity()
+                          ..setEntry(3, 2, 0.001)
+                          ..rotateX(_rotationX)
+                          ..rotateY(_rotationY),
+                        child: Container(
+                          width: 120,
+                          height: 120,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [Colors.teal, Colors.blue],
+                            ),
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black26,
+                                blurRadius: 10,
+                                offset: const Offset(5, 5),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                      child: const Center(
-                        child: Text(
-                          'FLUTTER',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
+                          child: const Center(
+                            child: Text(
+                              'FLUTTER',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
+                    Positioned(
+                      top: 10,
+                      right: 10,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: _status == 'Active' ? Colors.green.withOpacity(0.2) : Colors.red.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          _status,
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: _status == 'Active' ? Colors.green : Colors.red,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),

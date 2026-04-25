@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 import 'dart:math' as math;
+import 'dart:async';
 
 class AccelerometerScreen extends StatefulWidget {
   const AccelerometerScreen({super.key});
@@ -14,19 +15,26 @@ class _AccelerometerScreenState extends State<AccelerometerScreen> {
   int _shakeCount = 0;
   DateTime? _lastShakeTime;
   bool _isListening = true;
+  StreamSubscription<AccelerometerEvent>? _subscription;
 
   @override
   void initState() {
     super.initState();
 
-    accelerometerEventStream().listen((AccelerometerEvent event) {
-      if (!_isListening) return;
+    _subscription = accelerometerEventStream().listen((AccelerometerEvent event) {
+      if (!_isListening || !mounted) return;
 
       setState(() {
         _accelerometerValues = [event.x, event.y, event.z];
         _detectShake(event);
       });
     });
+  }
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
   }
 
   void _detectShake(AccelerometerEvent event) {

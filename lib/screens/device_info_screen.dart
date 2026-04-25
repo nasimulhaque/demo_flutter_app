@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'dart:async';
+import 'package:flutter/foundation.dart';
 
 class DeviceInfoScreen extends StatefulWidget {
   const DeviceInfoScreen({super.key});
@@ -13,6 +15,7 @@ class _DeviceInfoScreenState extends State<DeviceInfoScreen> {
   Map<String, String> _deviceInfo = {};
   String _connectionStatus = 'Unknown';
   bool _isLoading = true;
+  StreamSubscription<List<ConnectivityResult>>? _subscription;
 
   @override
   void initState() {
@@ -21,36 +24,80 @@ class _DeviceInfoScreenState extends State<DeviceInfoScreen> {
     _checkConnectivity();
   }
 
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
+  }
+
   Future<void> _getDeviceInfo() async {
     final DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
 
-    if (Theme.of(context).platform == TargetPlatform.android) {
-      final androidInfo = await deviceInfo.androidInfo;
+    try {
+      if (kIsWeb) {
+        final webInfo = await deviceInfo.webBrowserInfo;
+        if (!mounted) return;
+        setState(() {
+          _deviceInfo = {
+            'Browser': webInfo.browserName.name,
+            'Platform': webInfo.platform ?? 'Web',
+            'User Agent': webInfo.userAgent ?? 'Unknown',
+          };
+        });
+      } else if (defaultTargetPlatform == TargetPlatform.android) {
+        final androidInfo = await deviceInfo.androidInfo;
+        if (!mounted) return;
+        setState(() {
+          _deviceInfo = {
+            'Model': androidInfo.model,
+            'Manufacturer': androidInfo.manufacturer,
+            'Android Version': androidInfo.version.release,
+            'SDK Version': androidInfo.version.sdkInt.toString(),
+            'Device': androidInfo.device,
+            'Product': androidInfo.product,
+            'Brand': androidInfo.brand,
+            'Hardware': androidInfo.hardware,
+          };
+        });
+      } else if (defaultTargetPlatform == TargetPlatform.iOS) {
+        final iosInfo = await deviceInfo.iosInfo;
+        if (!mounted) return;
+        setState(() {
+          _deviceInfo = {
+            'Model': iosInfo.model,
+            'iOS Version': iosInfo.systemVersion,
+            'Name': iosInfo.name,
+            'System Name': iosInfo.systemName,
+            'Localized Model': iosInfo.localizedModel,
+          };
+        });
+      } else if (defaultTargetPlatform == TargetPlatform.windows) {
+        final windowsInfo = await deviceInfo.windowsInfo;
+        if (!mounted) return;
+        setState(() {
+          _deviceInfo = {
+            'Computer Name': windowsInfo.computerName,
+            'Number of Cores': windowsInfo.numberOfCores.toString(),
+            'System Memory': '${(windowsInfo.systemMemoryInMegabytes / 1024).toStringAsFixed(2)} GB',
+          };
+        });
+      } else {
+        if (!mounted) return;
+        setState(() {
+          _deviceInfo = {'Platform': defaultTargetPlatform.name};
+        });
+      }
+    } catch (e) {
+      if (!mounted) return;
       setState(() {
-        _deviceInfo = {
-          'Model': androidInfo.model,
-          'Manufacturer': androidInfo.manufacturer,
-          'Android Version': androidInfo.version.release,
-          'SDK Version': androidInfo.version.sdkInt.toString(),
-          'Device': androidInfo.device,
-          'Product': androidInfo.product,
-          'Brand': androidInfo.brand,
-          'Hardware': androidInfo.hardware,
-        };
-        _isLoading = false;
+        _deviceInfo = {'Error': 'Could not load device info: $e'};
       });
-    } else {
-      final iosInfo = await deviceInfo.iosInfo;
-      setState(() {
-        _deviceInfo = {
-          'Model': iosInfo.model,
-          'iOS Version': iosInfo.systemVersion,
-          'Name': iosInfo.name,
-          'System Name': iosInfo.systemName,
-          'Localized Model': iosInfo.localizedModel,
-        };
-        _isLoading = false;
-      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -58,14 +105,18 @@ class _DeviceInfoScreenState extends State<DeviceInfoScreen> {
     final connectivity = Connectivity();
     final result = await connectivity.checkConnectivity();
 
-    setState(() {
-      _getConnectionText(result);
-    });
-
-    connectivity.onConnectivityChanged.listen((List<ConnectivityResult> result) {
+    if (mounted) {
       setState(() {
         _getConnectionText(result);
       });
+    }
+
+    _subscription = connectivity.onConnectivityChanged.listen((List<ConnectivityResult> result) {
+      if (mounted) {
+        setState(() {
+          _getConnectionText(result);
+        });
+      }
     });
   }
 

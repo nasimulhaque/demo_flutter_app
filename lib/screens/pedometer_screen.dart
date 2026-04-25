@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:pedometer/pedometer.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'dart:async';
 
 class PedometerScreen extends StatefulWidget {
   const PedometerScreen({super.key});
@@ -13,11 +14,18 @@ class _PedometerScreenState extends State<PedometerScreen> {
   int _stepCount = 0;
   bool _isListening = false;
   String _error = '';
+  StreamSubscription<StepCount>? _subscription;
 
   @override
   void initState() {
     super.initState();
     _checkPermissionAndStart();
+  }
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
   }
 
   Future<void> _checkPermissionAndStart() async {
@@ -37,14 +45,16 @@ class _PedometerScreenState extends State<PedometerScreen> {
   }
 
   void _startPedometer() {
-    Pedometer.stepCountStream.listen(
+    _subscription = Pedometer.stepCountStream.listen(
           (StepCount event) {
+        if (!mounted) return;
         setState(() {
           _stepCount = event.steps;
           _isListening = true;
         });
       },
       onError: (error) {
+        if (!mounted) return;
         setState(() {
           _error = error.toString();
           _isListening = false;
