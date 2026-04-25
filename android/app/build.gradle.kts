@@ -39,6 +39,10 @@ android {
     }
 }
 
+dependencies {
+    implementation("androidx.annotation:annotation:1.7.0")
+}
+
 flutter {
     source = "../.."
 }
