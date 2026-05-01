@@ -10,27 +10,18 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.8
 
-  # Permissions
-  permission_handler: ^12.0.1
-
-  # Sensors
-  sensors_plus: ^7.0.0
-  pedometer: ^4.0.1
-
-  # Camera & Image
+  # UI & Utilities
   image_picker: ^1.0.5
-  camera: ^0.12.0+1
-
-  # Device Info & Connectivity
-  device_info_plus: ^12.4.0
-  connectivity_plus: ^7.1.1
-
-  # File handling
-  path_provider: ^2.1.1
-  path: ^1.9.0
-
-  # UI
+  intl: ^0.18.1
   provider: ^6.1.1
+  flutter_local_notifications: ^16.3.0
+
+  # firebase
+  firebase_core: ^4.7.0
+  firebase_auth: ^6.4.0
+  cloud_firestore: ^6.3.0
+  firebase_storage: ^13.3.0
+  firebase_messaging: ^16.2.0
 
 dev_dependencies:
   flutter_test:

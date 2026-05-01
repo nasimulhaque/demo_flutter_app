@@ -1,140 +1,128 @@
 import 'package:flutter/material.dart';
-import 'battery_screen.dart';
-import 'permission_screen.dart';
-import 'accelerometer_screen.dart';
-import 'gyroscope_screen.dart';
-import 'pedometer_screen.dart';
-import 'camera_screen.dart';
-import 'device_info_screen.dart';
+import 'package:provider/provider.dart';
+import '../services/auth_service.dart';
+import '../services/firestore_service.dart';
+import '../models/task.dart';
+import 'add_task_screen.dart';
+import 'profile_screen.dart';
+import '../widgets/task_card.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      top: false,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Sensor & Native Demo'),
-          backgroundColor: Colors.indigo,
-        ),
-        body: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            _buildSectionHeader('Native Features'),
-            _buildNavCard(
-              context,
-              title: 'Battery Level',
-              subtitle: 'MethodChannel - Get battery percentage',
-              icon: Icons.battery_alert,
-              color: Colors.green,
-              screen: const BatteryScreen(),
-            ),
-            _buildNavCard(
-              context,
-              title: 'Device Information',
-              subtitle: 'Get device model, OS version',
-              icon: Icons.devices,
-              color: Colors.blue,
-              screen: const DeviceInfoScreen(),
-            ),
-            const SizedBox(height: 24),
-            _buildSectionHeader('Permissions'),
-            _buildNavCard(
-              context,
-              title: 'Permission Manager',
-              subtitle: 'Request and manage permissions',
-              icon: Icons.security,
-              color: Colors.orange,
-              screen: const PermissionScreen(),
-            ),
-            const SizedBox(height: 24),
-            _buildSectionHeader('Sensors'),
-            _buildNavCard(
-              context,
-              title: 'Accelerometer',
-              subtitle: 'Shake detection & acceleration',
-              icon: Icons.sensors,
-              color: Colors.purple,
-              screen: const AccelerometerScreen(),
-            ),
-            _buildNavCard(
-              context,
-              title: 'Gyroscope',
-              subtitle: 'Rotation detection',
-              icon: Icons.rotate_right,
-              color: Colors.teal,
-              screen: const GyroscopeScreen(),
-            ),
-            _buildNavCard(
-              context,
-              title: 'Pedometer',
-              subtitle: 'Step counter',
-              icon: Icons.directions_walk,
-              color: Colors.deepOrange,
-              screen: const PedometerScreen(),
-            ),
-            const SizedBox(height: 24),
-            _buildSectionHeader('Camera & Media'),
-            _buildNavCard(
-              context,
-              title: 'Camera & Gallery',
-              subtitle: 'Take photos, pick from gallery',
-              icon: Icons.camera_alt,
-              color: Colors.red,
-              screen: const CameraScreen(),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+    final auth = context.read<AuthService>();
+    final firestore = FirestoreService();
 
-  Widget _buildSectionHeader(String title) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-          color: Colors.indigo,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNavCard(
-      BuildContext context, {
-        required String title,
-        required String subtitle,
-        required IconData icon,
-        required Color color,
-        required Widget screen,
-      }) {
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: ListTile(
-        leading: Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(10),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('My Tasks'),
+        backgroundColor: Colors.indigo,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.person),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ProfileScreen()),
+              );
+            },
           ),
-          child: Icon(icon, color: color),
-        ),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text(subtitle),
-        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => screen),
+        ],
+      ),
+      body: StreamBuilder<List<Task>>(
+        stream: firestore.getTasks(auth.user!.uid),
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          }
+
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          final tasks = snapshot.data ?? [];
+
+          if (tasks.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.task_alt, size: 64, color: Colors.grey),
+                  const SizedBox(height: 16),
+                  const Text('No tasks yet', style: TextStyle(fontSize: 18)),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    onPressed: () => _addTask(context),
+                    icon: const Icon(Icons.add),
+                    label: const Text('Create your first task'),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          return RefreshIndicator(
+            onRefresh: () async {},
+            child: ListView.builder(
+              padding: const EdgeInsets.all(12),
+              itemCount: tasks.length,
+              itemBuilder: (context, index) {
+                return TaskCard(
+                  task: tasks[index],
+                  onToggle: () => firestore.toggleComplete(auth.user!.uid, tasks[index]),
+                  onDelete: () => _confirmDelete(context, tasks[index]),
+                  onTap: () => _editTask(context, tasks[index]),
+                );
+              },
+            ),
           );
         },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _addTask(context),
+        child: const Icon(Icons.add),
+      ),
+    );
+  }
+
+  void _addTask(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const AddTaskScreen()),
+    );
+  }
+
+  void _editTask(BuildContext context, Task task) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => AddTaskScreen(task: task)),
+    );
+  }
+
+  void _confirmDelete(BuildContext context, Task task) {
+    final auth = context.read<AuthService>();
+    final firestore = FirestoreService();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Task'),
+        content: Text('Delete "${task.title}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              firestore.deleteTask(auth.user!.uid, task.id!);
+              Navigator.pop(context);
+            },
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
       ),
     );
   }

@@ -1,15 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
-import 'services/permission_service.dart';
-import 'screens/home_screen.dart';
+import 'firebase_options.dart';
+import 'services/auth_service.dart';
+import 'services/notification_service.dart';
+import 'screens/splash_screen.dart';
 
-void main() {
-  runApp(
-    ChangeNotifierProvider(
-      create: (_) => PermissionService(),
-      child: const MyApp(),
-    ),
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // Initialize notifications
+  await NotificationService.initialize();
+
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -17,18 +25,19 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Sensor & Native Demo',
-      theme: ThemeData(
-        primarySwatch: Colors.indigo,
-        useMaterial3: true,
-        appBarTheme: const AppBarTheme(
-          centerTitle: true,
-          elevation: 0,
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthService()),
+      ],
+      child: MaterialApp(
+        title: 'Task Manager',
+        theme: ThemeData(
+          primarySwatch: Colors.indigo,
+          useMaterial3: true,
         ),
+        debugShowCheckedModeBanner: false,
+        home: const SplashScreen(),
       ),
-      debugShowCheckedModeBanner: false,
-      home: const HomeScreen(),
     );
   }
 }
