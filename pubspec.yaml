@@ -11,10 +11,10 @@ dependencies:
   cupertino_icons: ^1.0.8
 
   # UI & Utilities
-  image_picker: ^1.0.5
-  intl: ^0.18.1
-  provider: ^6.1.1
-  flutter_local_notifications: ^16.3.0
+  image_picker: ^1.2.2
+  intl: ^0.20.2
+  provider: ^6.1.5+1
+  flutter_local_notifications: ^21.0.0
 
   # firebase
   firebase_core: ^4.7.0

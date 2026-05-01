@@ -5,7 +5,7 @@ class FirestoreService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   // Get tasks collection reference for a user
-  CollectionReference _getTasksCollection(String userId) {
+  CollectionReference<Map<String, dynamic>> _getTasksCollection(String userId) {
     return _firestore.collection('users').doc(userId).collection('tasks');
   }
 
@@ -21,14 +21,15 @@ class FirestoreService {
         .snapshots()
         .map((snapshot) {
       return snapshot.docs.map((doc) {
-        return Task.fromMap(doc.id, doc.data());
+        final Map<String, dynamic> data = doc.data();
+        return Task.fromMap(doc.id, data);
       }).toList();
     });
   }
 
   // Update task
   Future<void> updateTask(String userId, Task task) async {
-    await _getTasksCollection(userId).doc(task.id).update(task.toMap());
+    await _getTasksCollection(userId).doc(task.id!).update(task.toMap());
   }
 
   // Delete task
@@ -38,7 +39,7 @@ class FirestoreService {
 
   // Toggle completion
   Future<void> toggleComplete(String userId, Task task) async {
-    await _getTasksCollection(userId).doc(task.id).update({
+    await _getTasksCollection(userId).doc(task.id!).update({
       'isCompleted': !task.isCompleted,
     });
   }
@@ -46,8 +47,9 @@ class FirestoreService {
   // Get single task
   Future<Task?> getTask(String userId, String taskId) async {
     final doc = await _getTasksCollection(userId).doc(taskId).get();
-    if (doc.exists) {
-      return Task.fromMap(doc.id, doc.data()!);
+    final data = doc.data();
+    if (doc.exists && data != null) {
+      return Task.fromMap(doc.id, data);
     }
     return null;
   }

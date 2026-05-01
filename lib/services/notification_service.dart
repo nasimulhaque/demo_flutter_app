@@ -8,7 +8,7 @@ class NotificationService {
 
   static Future<void> initialize() async {
     // Request permission
-    NotificationSettings settings = await _fcm.requestPermission();
+    await _fcm.requestPermission();
 
     // Initialize local notifications
     const AndroidInitializationSettings androidSettings =
@@ -20,11 +20,10 @@ class NotificationService {
       iOS: iosSettings,
     );
 
-    await _localNotifications.initialize(initSettings);
+    await _localNotifications.initialize(settings: initSettings);
 
     // Get FCM token
-    String? token = await _fcm.getToken();
-    print('FCM Token: $token');
+    await _fcm.getToken();
 
     // Handle foreground messages
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
@@ -46,15 +45,14 @@ class NotificationService {
     );
 
     await _localNotifications.show(
-      DateTime.now().millisecondsSinceEpoch.remainder(100000),
-      message.notification?.title,
-      message.notification?.body,
-      details,
+      id: DateTime.now().millisecondsSinceEpoch.remainder(100000),
+      title: message.notification?.title,
+      body: message.notification?.body,
+      notificationDetails: details,
     );
   }
 }
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  print('Handling background message: ${message.messageId}');
 }

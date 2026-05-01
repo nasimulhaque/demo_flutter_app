@@ -2,9 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthService>();
@@ -39,13 +44,13 @@ class ProfileScreen extends StatelessWidget {
               child: ElevatedButton.icon(
                 onPressed: () async {
                   await auth.signOut();
-                  if (mounted) {
-                    Navigator.pushNamedAndRemoveUntil(
-                      context,
-                      '/',
-                          (route) => false,
+                  if (!mounted) return;
+                  // ignore: use_build_context_synchronously
+                  Navigator.pushNamedAndRemoveUntil(
+                    context,
+                    '/',
+                        (route) => false,
                     );
-                  }
                 },
                 icon: const Icon(Icons.logout),
                 label: const Text('Sign Out'),
