@@ -7,31 +7,34 @@ class NotificationService {
   FlutterLocalNotificationsPlugin();
 
   static Future<void> initialize() async {
-    // Request permission
-    await _fcm.requestPermission();
+    try {
+      // Request permission
+      await _fcm.requestPermission();
 
-    // Initialize local notifications
-    const AndroidInitializationSettings androidSettings =
-    AndroidInitializationSettings('@mipmap/ic_launcher');
-    const DarwinInitializationSettings iosSettings =
-    DarwinInitializationSettings();
-    const InitializationSettings initSettings = InitializationSettings(
-      android: androidSettings,
-      iOS: iosSettings,
-    );
+      // Initialize local notifications
+      const AndroidInitializationSettings androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+      const DarwinInitializationSettings iosSettings = DarwinInitializationSettings();
+      const InitializationSettings initSettings = InitializationSettings(
+        android: androidSettings,
+        iOS: iosSettings,
+      );
 
-    await _localNotifications.initialize(settings: initSettings);
+      await _localNotifications.initialize(settings: initSettings);
 
-    // Get FCM token
-    await _fcm.getToken();
+      // Get FCM token
+      await _fcm.getToken();
 
-    // Handle foreground messages
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      _showLocalNotification(message);
-    });
+      // Handle foreground messages
+      FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+        _showLocalNotification(message);
+      });
 
-    // Handle background messages
-    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+      // Handle background messages
+      FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+    } catch (e) {
+      // ignore: avoid_print
+      print('Notification initialization failed: $e');
+    }
   }
 
   static Future<void> _showLocalNotification(RemoteMessage message) async {

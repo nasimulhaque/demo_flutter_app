@@ -15,19 +15,30 @@ class HomeScreen extends StatelessWidget {
     final auth = context.read<AuthService>();
     final firestore = FirestoreService();
 
+    if (auth.user == null) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
         title: const Text('My Tasks'),
-        backgroundColor: Colors.indigo,
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.person),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const ProfileScreen()),
-              );
-            },
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: IconButton(
+              icon: const Icon(Icons.person_outline, color: Colors.blueAccent, size: 28),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                );
+              },
+            ),
           ),
         ],
       ),
@@ -35,7 +46,16 @@ class HomeScreen extends StatelessWidget {
         stream: firestore.getTasks(auth.user!.uid),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                  const SizedBox(height: 16),
+                  Text('Error: ${snapshot.error}'),
+                ],
+              ),
+            );
           }
 
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -46,19 +66,34 @@ class HomeScreen extends StatelessWidget {
 
           if (tasks.isEmpty) {
             return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.task_alt, size: 64, color: Colors.grey),
-                  const SizedBox(height: 16),
-                  const Text('No tasks yet', style: TextStyle(fontSize: 18)),
-                  const SizedBox(height: 16),
-                  ElevatedButton.icon(
-                    onPressed: () => _addTask(context),
-                    icon: const Icon(Icons.add),
-                    label: const Text('Create your first task'),
-                  ),
-                ],
+              child: Padding(
+                padding: const EdgeInsets.all(32.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.assignment_outlined, size: 100, color: Colors.blueAccent.withAlpha(50)),
+                    const SizedBox(height: 24),
+                    const Text(
+                      'No tasks yet',
+                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black87),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Tap the button below to add your first task and stay organized!',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 16, color: Colors.black54),
+                    ),
+                    const SizedBox(height: 32),
+                    ElevatedButton.icon(
+                      onPressed: () => _addTask(context),
+                      icon: const Icon(Icons.add),
+                      label: const Text('Add Task'),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             );
           }
@@ -66,14 +101,17 @@ class HomeScreen extends StatelessWidget {
           return RefreshIndicator(
             onRefresh: () async {},
             child: ListView.builder(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               itemCount: tasks.length,
               itemBuilder: (context, index) {
-                return TaskCard(
-                  task: tasks[index],
-                  onToggle: () => firestore.toggleComplete(auth.user!.uid, tasks[index]),
-                  onDelete: () => _confirmDelete(context, tasks[index]),
-                  onTap: () => _editTask(context, tasks[index]),
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: TaskCard(
+                    task: tasks[index],
+                    onToggle: () => firestore.toggleComplete(auth.user!.uid, tasks[index]),
+                    onDelete: () => _confirmDelete(context, tasks[index]),
+                    onTap: () => _editTask(context, tasks[index]),
+                  ),
                 );
               },
             ),
@@ -82,7 +120,10 @@ class HomeScreen extends StatelessWidget {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _addTask(context),
-        child: const Icon(Icons.add),
+        backgroundColor: Colors.blueAccent,
+        foregroundColor: Colors.white,
+        elevation: 4,
+        child: const Icon(Icons.add, size: 30),
       ),
     );
   }
@@ -109,18 +150,22 @@ class HomeScreen extends StatelessWidget {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Task'),
-        content: Text('Delete "${task.title}"?'),
+        content: Text('Are you sure you want to delete "${task.title}"?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Cancel'),
           ),
-          TextButton(
+          ElevatedButton(
             onPressed: () {
               firestore.deleteTask(auth.user!.uid, task.id!);
               Navigator.pop(context);
             },
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Delete'),
           ),
         ],
       ),
