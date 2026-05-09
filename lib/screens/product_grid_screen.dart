@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../services/api_service.dart';
 import '../models/product.dart';
-import '../providers/cart_provider.dart';
-import '../providers/favorite_provider.dart';
 import 'product_detail_screen.dart';
 import '../widgets/product_card.dart';
 
@@ -112,7 +109,7 @@ class _ProductGridScreenState extends State<ProductGridScreen> {
                         _filterByCategory(category);
                       }
                     },
-                    selectedColor: const Color(0xFF6C63FF).withOpacity(0.2),
+                    selectedColor: const Color(0xFF6C63FF).withAlpha(50),
                     checkmarkColor: const Color(0xFF6C63FF),
                   ),
                 );
