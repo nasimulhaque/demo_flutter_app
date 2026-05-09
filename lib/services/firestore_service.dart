@@ -9,6 +9,22 @@ class FirestoreService {
     return _firestore.collection('users').doc(userId).collection('tasks');
   }
 
+  // Create user profile
+  Future<void> createUser(String userId, String email, String name) async {
+    await _firestore.collection('users').doc(userId).set({
+      'email': email,
+      'name': name,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  // Update user
+  Future<void> updateLastLoginTime(String userId) async {
+    await _firestore.collection('users').doc(userId).update({
+      'lastLogin': FieldValue.serverTimestamp(),
+    });
+  }
+
   // Create task
   Future<void> addTask(String userId, Task task) async {
     await _getTasksCollection(userId).add(task.toMap());

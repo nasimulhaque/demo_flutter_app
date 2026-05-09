@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'firestore_service.dart';
 
 class AuthService extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirestoreService _firestoreService = FirestoreService();
   User? _user;
   bool _isLoading = false;
   String? _error;
@@ -36,6 +38,9 @@ class AuthService extends ChangeNotifier {
       await credential.user?.updateDisplayName(name);
       await credential.user?.reload();
 
+      // Create user document in Firestore
+      await _firestoreService.createUser(credential.user!.uid, email, name);
+
       _user = _auth.currentUser;
       _isLoading = false;
       notifyListeners();
@@ -60,6 +65,7 @@ class AuthService extends ChangeNotifier {
         password: password,
       );
       _user = _auth.currentUser;
+      await _firestoreService.updateLastLoginTime(_user!.uid);
       _isLoading = false;
       notifyListeners();
       return true;
