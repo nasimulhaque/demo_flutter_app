@@ -34,7 +34,7 @@ class StorageService {
       final downloadUrl = await ref.getDownloadURL();
       return downloadUrl;
     } catch (e) {
-      print('Error uploading image: $e');
+      // print('Error uploading image: $e');
       return null;
     }
   }
@@ -44,7 +44,7 @@ class StorageService {
       final ref = _storage.refFromURL(imageUrl);
       await ref.delete();
     } catch (e) {
-      print('Error deleting image: $e');
+      // print('Error deleting image: $e');
     }
   }
 }

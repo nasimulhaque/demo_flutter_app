@@ -182,7 +182,7 @@ class _CartScreenState extends State<CartScreen> {
               color: Theme.of(context).cardColor,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withAlpha(12),
                   blurRadius: 10,
                 ),
               ],

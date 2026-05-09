@@ -32,7 +32,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         final product = await _apiService.fetchProductById(fav['product_id']);
         products.add(product);
       } catch (e) {
-        print('Error loading product: $e');
+        // print('Error loading product: $e');
       }
     }
 

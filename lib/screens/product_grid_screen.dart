@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../models/category.dart';
 import '../services/api_service.dart';
 import '../models/product.dart';
 import 'product_detail_screen.dart';
@@ -34,10 +35,10 @@ class _ProductGridScreenState extends State<ProductGridScreen> {
 
     try {
       final products = await _apiService.fetchProducts(limit: 30);
-      final categories = await _apiService.fetchCategories();
+      final List<Category> categories = await _apiService.fetchCategories();
       setState(() {
         _products = products;
-        _categories = ['All', ...categories];
+        _categories = ['All', ...categories.map((c) => c.name)];
         _isLoading = false;
       });
     } catch (e) {
