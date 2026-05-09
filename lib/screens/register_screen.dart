@@ -181,7 +181,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           _passwordController.text.trim(),
                           _nameController.text.trim(),
                         );
-                        if (success && mounted) {
+                        if (success && context.mounted) {
                           Navigator.pop(context);
                         }
                       }

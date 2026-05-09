@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sensors_plus/sensors_plus.dart';
+import 'dart:math' as math;
+import 'dart:async';
 import '../providers/cart_provider.dart';
 import 'checkout_screen.dart';
 
@@ -12,45 +14,31 @@ class CartScreen extends StatefulWidget {
 }
 
 class _CartScreenState extends State<CartScreen> {
+  StreamSubscription? _accelerometerSubscription;
+
   @override
   void initState() {
     super.initState();
     _listenToShake();
   }
 
-  void _listenToShake() {
-    // accelerometerEvents.listen((event) {
-    //   double acceleration = (event.x * event.x + event.y * event.y + event.z * event.z).sqrt();
-    //   if (acceleration > 18) {
-    //     _showShakeDialog();
-    //   }
-    // });
+  @override
+  void dispose() {
+    _accelerometerSubscription?.cancel();
+    super.dispose();
   }
 
-  void _showShakeDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Shake to Clear Cart'),
-        content: const Text('Do you want to clear all items from your cart?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              context.read<CartProvider>().clearCart();
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Cart cleared!')),
-              );
-            },
-            child: const Text('Clear', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
+  void _listenToShake() {
+    _accelerometerSubscription = accelerometerEventStream().listen((event) {
+      double acceleration = math.sqrt(event.x * event.x + event.y * event.y + event.z * event.z);
+      if (acceleration > 18) {
+        if (!mounted) return;
+        context.read<CartProvider>().clearCart();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Cart cleared!')),
+        );
+      }
+    });
   }
 
   @override

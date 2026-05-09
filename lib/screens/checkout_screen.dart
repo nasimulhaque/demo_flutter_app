@@ -85,7 +85,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     // Show notification
     await NotificationService.showOrderConfirmation(orderId);
 
-    if (mounted) {
+    if (context.mounted) {
       Navigator.pop(context); // Close loading
       Navigator.popUntil(context, (route) => route.isFirst);
 
@@ -176,7 +176,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   RadioListTile(
                     title: const Text('Credit Card'),
                     value: 'Credit Card',
+                    // ignore: deprecated_member_use
                     groupValue: _paymentMethod,
+                    // ignore: deprecated_member_use
                     onChanged: (value) {
                       setState(() {
                         _paymentMethod = value.toString();
@@ -186,7 +188,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   RadioListTile(
                     title: const Text('Cash on Delivery'),
                     value: 'Cash on Delivery',
+                    // ignore: deprecated_member_use
                     groupValue: _paymentMethod,
+                    // ignore: deprecated_member_use
                     onChanged: (value) {
                       setState(() {
                         _paymentMethod = value.toString();

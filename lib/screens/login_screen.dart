@@ -145,7 +145,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           _emailController.text.trim(),
                           _passwordController.text.trim(),
                         );
-                        if (success && mounted) {
+                        if (success && context.mounted) {
                           Navigator.pushReplacement(
                             context,
                             MaterialPageRoute(builder: (_) => const HomeScreen()),

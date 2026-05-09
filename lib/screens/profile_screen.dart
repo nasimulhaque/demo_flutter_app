@@ -27,6 +27,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _loadProfileImage() async {
     final auth = context.read<AuthService>();
     final url = await auth.getUserProfileImage();
+    if (!mounted) return;
     setState(() {
       _profileImageUrl = url;
       _isLoading = false;
@@ -36,6 +37,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _updateProfileImage() async {
     final image = await _storageService.pickImageFromGallery();
     if (image != null) {
+      if (!mounted) return;
       setState(() => _isLoading = true);
 
       final auth = context.read<AuthService>();
@@ -46,11 +48,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       if (imageUrl != null) {
         await auth.updateProfileImage(imageUrl);
+        if (!mounted) return;
         setState(() {
           _profileImageUrl = imageUrl;
         });
       }
 
+      if (!mounted) return;
       setState(() => _isLoading = false);
     }
   }
@@ -198,7 +202,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     final prefs = await SharedPreferences.getInstance();
                     await prefs.setBool('isLoggedIn', false);
 
-                    if (mounted) {
+                    if (context.mounted) {
                       Navigator.pushAndRemoveUntil(
                         context,
                         MaterialPageRoute(builder: (_) => const LoginScreen()),
