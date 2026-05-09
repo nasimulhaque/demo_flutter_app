@@ -7,40 +7,42 @@ class NotificationService {
   FlutterLocalNotificationsPlugin();
 
   static Future<void> initialize() async {
-    try {
-      // Request permission
-      await _fcm.requestPermission();
+    // Request permission
+    NotificationSettings settings = await _fcm.requestPermission();
 
-      // Initialize local notifications
-      const AndroidInitializationSettings androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
-      const DarwinInitializationSettings iosSettings = DarwinInitializationSettings();
-      const InitializationSettings initSettings = InitializationSettings(
-        android: androidSettings,
-        iOS: iosSettings,
-      );
+    // Initialize local notifications
+    const AndroidInitializationSettings androidSettings =
+    AndroidInitializationSettings('@mipmap/ic_launcher');
+    const DarwinInitializationSettings iosSettings =
+    DarwinInitializationSettings();
+    const InitializationSettings initSettings = InitializationSettings(
+      android: androidSettings,
+      iOS: iosSettings,
+    );
 
-      await _localNotifications.initialize(settings: initSettings);
+    await _localNotifications.initialize(initSettings);
 
-      // Get FCM token
-      await _fcm.getToken();
+    // Get FCM token
+    String? token = await _fcm.getToken();
+    print('FCM Token: $token');
 
-      // Handle foreground messages
-      FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-        _showLocalNotification(message);
-      });
+    // Handle foreground messages
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      _showLocalNotification(message);
+    });
 
-      // Handle background messages
-      FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-    } catch (e) {
-      // ignore: avoid_print
-      print('Notification initialization failed: $e');
-    }
+    // Handle background messages
+    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   }
 
-  static Future<void> _showLocalNotification(RemoteMessage message) async {
+  static Future<void> showOrderConfirmation(String orderId) async {
     const AndroidNotificationDetails androidDetails =
-    AndroidNotificationDetails('task_channel', 'Task Notifications',
-        importance: Importance.high, priority: Priority.high);
+    AndroidNotificationDetails(
+      'order_channel',
+      'Order Notifications',
+      importance: Importance.high,
+      priority: Priority.high,
+    );
     const DarwinNotificationDetails iosDetails = DarwinNotificationDetails();
     const NotificationDetails details = NotificationDetails(
       android: androidDetails,
@@ -48,14 +50,37 @@ class NotificationService {
     );
 
     await _localNotifications.show(
-      id: DateTime.now().millisecondsSinceEpoch.remainder(100000),
-      title: message.notification?.title,
-      body: message.notification?.body,
-      notificationDetails: details,
+      DateTime.now().millisecondsSinceEpoch.remainder(100000),
+      'Order Confirmed! 🎉',
+      'Your order #$orderId has been placed successfully',
+      details,
+    );
+  }
+
+  static Future<void> _showLocalNotification(RemoteMessage message) async {
+    const AndroidNotificationDetails androidDetails =
+    AndroidNotificationDetails(
+      'general_channel',
+      'General Notifications',
+      importance: Importance.high,
+      priority: Priority.high,
+    );
+    const DarwinNotificationDetails iosDetails = DarwinNotificationDetails();
+    const NotificationDetails details = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
+
+    await _localNotifications.show(
+      DateTime.now().millisecondsSinceEpoch.remainder(100000),
+      message.notification?.title,
+      message.notification?.body,
+      details,
     );
   }
 }
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  print('Handling background message: ${message.messageId}');
 }

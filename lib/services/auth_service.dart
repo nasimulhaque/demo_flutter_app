@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'firestore_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AuthService extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirestoreService _firestoreService = FirestoreService();
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   User? _user;
   bool _isLoading = false;
   String? _error;
@@ -15,14 +15,12 @@ class AuthService extends ChangeNotifier {
   bool get isLoggedIn => _user != null;
 
   AuthService() {
-    _user = _auth.currentUser;
     _auth.authStateChanges().listen((User? user) {
       _user = user;
       notifyListeners();
     });
   }
 
-  // Sign up with email/password
   Future<bool> signUp(String email, String password, String name) async {
     _isLoading = true;
     _error = null;
@@ -34,12 +32,12 @@ class AuthService extends ChangeNotifier {
         password: password,
       );
 
-      // Update display name
       await credential.user?.updateDisplayName(name);
-      await credential.user?.reload();
-
-      // Create user document in Firestore
-      await _firestoreService.createUser(credential.user!.uid, email, name);
+      await _firestore.collection('users').doc(credential.user?.uid).set({
+        'name': name,
+        'email': email,
+        'createdAt': DateTime.now().toIso8601String(),
+      });
 
       _user = _auth.currentUser;
       _isLoading = false;
@@ -53,7 +51,6 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  // Sign in with email/password
   Future<bool> signIn(String email, String password) async {
     _isLoading = true;
     _error = null;
@@ -65,7 +62,6 @@ class AuthService extends ChangeNotifier {
         password: password,
       );
       _user = _auth.currentUser;
-      await _firestoreService.updateLastLoginTime(_user!.uid);
       _isLoading = false;
       notifyListeners();
       return true;
@@ -77,14 +73,12 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  // Sign out
   Future<void> signOut() async {
     await _auth.signOut();
     _user = null;
     notifyListeners();
   }
 
-  // Reset password
   Future<bool> resetPassword(String email) async {
     _isLoading = true;
     _error = null;
@@ -131,5 +125,20 @@ class AuthService extends ChangeNotifier {
 
   String getUserEmail() {
     return _user?.email ?? '';
+  }
+
+  Future<String?> getUserProfileImage() async {
+    if (_user == null) return null;
+    final doc = await _firestore.collection('users').doc(_user!.uid).get();
+    return doc.data()?['profileImage'];
+  }
+
+  Future<void> updateProfileImage(String imageUrl) async {
+    if (_user != null) {
+      await _firestore.collection('users').doc(_user!.uid).update({
+        'profileImage': imageUrl,
+      });
+      notifyListeners();
+    }
   }
 }
